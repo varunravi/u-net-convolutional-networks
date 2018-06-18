@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
 	X_train = np.array(X_train)
 
-	f = 3
+	f = 4
 	
 
 	
