@@ -88,6 +88,8 @@ if __name__ == '__main__':
 	ipdb.set_trace()
 
 	X_train = np.array(X_train)
+
+	f = 3
 	
 
 	
