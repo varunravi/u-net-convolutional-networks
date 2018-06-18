@@ -73,7 +73,7 @@ def unet(input_shape):
 
 	return model
 
-
+ 
 if __name__ == '__main__':
 
 	X_train = []
