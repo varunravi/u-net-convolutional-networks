@@ -29,7 +29,8 @@ def pywalker(path):
 
 	for root, dirs, files in os.walk(path):
  		for file_ in files:
- 			list_files.append(os.path.join(root, file_))
+ 			if file_ != '.DS_Store':
+ 				list_files.append(os.path.join(root, file_))
 
 	return list_files
 
@@ -131,19 +132,18 @@ def unet(input_shape):
 
 if __name__ == '__main__':
 
-	X_train = []
-	Y_train = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-	list_img = pywalker('./letters')
+	X_train = np.array([])
+	Y_train = np.zeros([2, 4, 4, 2])
+	list_img = pywalker('./misc')
 
-	model = unet((572, 572, 1))
+	model = unet((200, 200, 4))
 	model.summary()
-	
-	for i in list_img:
-		X_train.append(mpimg.imread(i))
-	
-	X_train = np.array(X_train)
+
+	X_train = np.append([mpimg.imread(list_img[0])], [mpimg.imread(list_img[1])], axis=0)
+	model.fit(X_train, Y_train, 32)
 
 	ipdb.set_trace()
+
 
 	
 	
