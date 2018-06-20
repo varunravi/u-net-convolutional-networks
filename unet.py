@@ -2,17 +2,18 @@
 # unet.py
 
 
-from keras.layers.convolutional import Conv2D
-from keras.layers.core import Activation
-from keras.models import Model
-from keras.layers import MaxPooling2D, UpSampling2D, concatenate, Cropping2D
-from keras.optimizers import SGD
+# from keras.layers.convolutional import Conv2D
+# from keras.layers.core import Activation
+# from keras.models import Model
+from keras.layers import Cropping2D
+# from keras.optimizers import SGD
 import numpy as np
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import ipdb
 import os
-from keras.layers import Input
+#from keras.layers import Input
+import tensorflow as tf
 #ipdb.set_trace()
 
 
@@ -75,57 +76,85 @@ def sub_width(tensor_1, tensor_2):
 # Purpose:   Creates a unet model given the input shape 
 # In args:   input_shape
 # Out arg: model
-def unet(input_shape):
+def unet(input_shape, padding = "valid", activation=tf.nn.relu):
 	
-	inputs = Input(shape=input_shape)
+	Y_train = np.zeros([301088, 1, 1, 2])
 
-	down_conv1 = Conv2D(64, (3,3), padding = 'valid', input_shape=input_shape, activation='relu')(inputs)
-	down_conv1 = Conv2D(64, (3,3), padding = 'valid', activation='relu')(down_conv1)
+	inputs = tf.constant(0., shape=input_shape)
 
-	down_conv2 = MaxPooling2D(pool_size=(2,2), strides=2)(down_conv1)
-	down_conv2 = Conv2D(128, (3,3), padding = 'valid', activation='relu')(down_conv2)
-	down_conv2 = Conv2D(128, (3,3), padding = 'valid', activation='relu')(down_conv2)
-	
-	down_conv3 = MaxPooling2D(pool_size=(2,2), strides=2)(down_conv2)
-	down_conv3 = Conv2D(256, (3,3), padding = 'valid', activation='relu')(down_conv3)
-	down_conv3 = Conv2D(256, (3,3), padding = 'valid', activation='relu')(down_conv3)
-	
-	down_conv4 = MaxPooling2D(pool_size=(2,2), strides=2)(down_conv3)
-	down_conv4 = Conv2D(512, (3,3), padding = 'valid', activation='relu')(down_conv4)
-	down_conv4 = Conv2D(512, (3,3), padding = 'valid', activation='relu')(down_conv4)
-	
-	down_conv5 = MaxPooling2D(pool_size=(2,2), strides=2)(down_conv4)
-	down_conv5 = Conv2D(1024, (3,3), padding = 'valid', activation='relu')(down_conv5)
-	down_conv5 = Conv2D(1024, (3,3), padding = 'valid', activation='relu')(down_conv5)
+	down_conv1 = tf.layers.conv2d(inputs=inputs, filters=64, kernel_size=(3,3), padding=padding, activation=activation)
+	down_conv1 = tf.layers.conv2d(inputs=down_conv1, filters=64, kernel_size=(3,3), padding=padding, activation=activation)
 
-	up_conv1 = UpSampling2D(size=(2,2))(down_conv5)
+	down_conv2 = tf.layers.max_pooling2d(inputs=down_conv1, pool_size=(2,2), strides=2)
+	down_conv2 = tf.layers.conv2d(down_conv2, 128, (3,3), padding = padding, activation=activation)
+	down_conv2 = tf.layers.conv2d(down_conv2, 128, (3,3), padding = padding, activation=activation)
+	
+	
+	
+	down_conv3 = tf.layers.max_pooling2d(inputs=down_conv2, pool_size=(2,2), strides=2)
+	down_conv3 = tf.layers.conv2d(down_conv3, 256, (3,3), padding = padding, activation=activation)
+	down_conv3 = tf.layers.conv2d(down_conv3, 256, (3,3), padding = padding, activation=activation)
+	
+	
+	
+	down_conv4 = tf.layers.max_pooling2d(inputs=down_conv3, pool_size=(2,2), strides=2)
+	down_conv4 = tf.layers.conv2d(down_conv4, 512, (3,3), padding = padding, activation=activation)
+	down_conv4 = tf.layers.conv2d(down_conv4, 512, (3,3), padding = padding, activation=activation)
+	
+	
+
+	down_conv5 = tf.layers.max_pooling2d(inputs=down_conv4, pool_size=(2,2), strides=2)
+	down_conv5 = tf.layers.conv2d(down_conv5, 1024, (3,3), padding = padding, activation=activation)
+	down_conv5 = tf.layers.conv2d(down_conv5, 1024, (3,3), padding = padding, activation=activation)
+
+	up_conv1 = tf.image.resize_nearest_neighbor(down_conv5, (down_conv5.get_shape().as_list()[1]*2,down_conv5.get_shape().as_list()[2]*2))
 	down_conv4 = crop_img(sub_height(up_conv1, down_conv4), sub_width(up_conv1, down_conv4), down_conv4)
-	up_conv1 = concatenate([down_conv4, up_conv1], axis=-1)
-	up_conv1 = Conv2D(512, (3,3), padding = 'valid', activation='relu')(up_conv1)
-	up_conv1 = Conv2D(512, (3,3), padding = 'valid', activation='relu')(up_conv1)
+	up_conv1 = tf.concat([down_conv4, up_conv1], axis=-1)
+	up_conv1 = tf.layers.conv2d(up_conv1, 512, (3,3), padding = padding, activation=activation)
+	up_conv1 = tf.layers.conv2d(up_conv1, 512, (3,3), padding = padding, activation=activation)
+	
 
-	up_conv2 = UpSampling2D(size=(2,2))(up_conv1)
+	up_conv2 = tf.image.resize_nearest_neighbor(up_conv1, (up_conv1.get_shape().as_list()[1]*2,up_conv1.get_shape().as_list()[2]*2))
 	down_conv3 = crop_img(sub_height(up_conv2, down_conv3), sub_width(up_conv2, down_conv3), down_conv3)
-	up_conv2 = concatenate([down_conv3, up_conv2], axis=-1)
-	up_conv2 = Conv2D(256, (3,3), padding = 'valid', activation='relu')(up_conv2)
-	up_conv2 = Conv2D(256, (3,3), padding = 'valid', activation='relu')(up_conv2)
-
-	up_conv3 = UpSampling2D(size=(2,2))(up_conv2)
+	up_conv2 = tf.concat([down_conv3, up_conv2], axis=-1)
+	up_conv2 = tf.layers.conv2d(up_conv2, 256, (3,3), padding=padding, activation=activation)
+	up_conv2 = tf.layers.conv2d(up_conv2, 256, (3,3), padding=padding, activation=activation)
+	
+	
+	#convolution transpose
+	up_conv3 = tf.image.resize_nearest_neighbor(up_conv2, (up_conv2.get_shape().as_list()[1]*2,up_conv2.get_shape().as_list()[2]*2))
 	down_conv2 = crop_img(sub_height(up_conv3, down_conv2), sub_width(up_conv3, down_conv2), down_conv2)
-	up_conv3 = concatenate([down_conv2, up_conv3], axis=-1)
-	up_conv3 = Conv2D(128, (3,3), padding = 'valid', activation='relu')(up_conv3)
-	up_conv3 = Conv2D(128, (3,3), padding = 'valid', activation='relu')(up_conv3)	
+	up_conv3 = tf.concat([down_conv2, up_conv3], axis=-1)
+	up_conv3 = tf.layers.conv2d(up_conv3, 128, (3,3), padding = padding, activation=activation)
+	up_conv3 = tf.layers.conv2d(up_conv3, 128, (3,3), padding = padding, activation=activation)
 
-	up_conv4 = UpSampling2D(size=(2,2))(up_conv3)
+	
+
+	up_conv4 = tf.image.resize_nearest_neighbor(up_conv3, (up_conv3.get_shape().as_list()[1]*2,up_conv3.get_shape().as_list()[2]*2))
 	down_conv1 = crop_img(sub_height(up_conv4, down_conv1), sub_width(up_conv4, down_conv1), down_conv1)
-	up_conv4 = concatenate([down_conv1, up_conv4], axis=-1)
-	up_conv4 = Conv2D(64, (3,3), padding = 'valid', activation='relu')(up_conv4)
-	up_conv4 = Conv2D(64, (3,3), padding = 'valid', activation='relu')(up_conv4)
+	up_conv4 = tf.concat([down_conv1, up_conv4], axis=-1)
+	up_conv4 = tf.layers.conv2d(up_conv4, 64, (3,3), padding = padding, activation=activation)
+	up_conv4 = tf.layers.conv2d(up_conv4, 64, (3,3), padding = padding, activation=activation)
+	final = tf.layers.conv2d(up_conv4, 2, 1, padding = padding, activation=tf.nn.softmax)
 
-	final = Conv2D(2, 1, padding = 'valid', activation='softmax')(up_conv4)
+	loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=final, labels=Y_train))
+	optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-4)
+	train_op = optimizer.minimize(loss_op)
+
+
+	# Evaluate model
+	correct_pred = tf.equal(tf.argmax(final, 1), tf.argmax(np.zeros([2, 388, 388, 2]), 1))
+	accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+	# Initialize the variables (i.e. assign their default value)
+	init = tf.global_variables_initializer()
+	
+	ipdb.set_trace()
 
 	model = Model(inputs=inputs, outputs=final)
 	model.compile(optimizer=SGD(lr = 1e-4), loss='binary_crossentropy', metrics=['accuracy'])
+
+
 
 	return model
 
@@ -133,10 +162,10 @@ def unet(input_shape):
 if __name__ == '__main__':
 
 	X_train = np.array([])
-	Y_train = np.zeros([2, 4, 4, 2])
+	Y_train = ['dog', 'cat']
 	list_img = pywalker('./misc')
 
-	model = unet((200, 200, 4))
+	model = unet((2, 572, 572, 572))
 	model.summary()
 
 	X_train = np.append([mpimg.imread(list_img[0])], [mpimg.imread(list_img[1])], axis=0)
