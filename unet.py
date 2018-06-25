@@ -19,7 +19,6 @@ IMG_WIDTH_y=388
 NUM_CHANNELS_y=2
 
 
-
 def pywalker(path):
 	
 	list_files = []
