@@ -128,7 +128,7 @@ if __name__ == '__main__':
 	with tf.Session() as sess:
 
 		sess.run(tf.global_variables_initializer())
-		#saver.restore(sess, tf.train.latest_checkpoint('./cifar-10'))
+		#saver.restore(sess, tf.train.latest_checkpoint('~/saved_models/unet/cifar-10/'))
 
 		for epoch in range(EPOCH):
 			total_steps = int(x_train.shape[0]/BATCH_SIZE)
@@ -147,8 +147,8 @@ if __name__ == '__main__':
 
 					print("accuracy: %f%%" % (accuracy*100))
 	    
-			saver.save(sess, save_path='./cifar-10/model.chkpt', global_step=current_global_step)
-		tf.train.write_graph(sess.graph, './exported_graph/cifar-10', 'final.pb', as_text=False)
-		tf.train.export_meta_graph('./exported_graph/cifar-10/final.meta', graph=graph, clear_devices=True)
+			saver.save(sess, save_path='~/saved_models/unet/cifar-10/model.chkpt', global_step=current_global_step)
+		tf.train.write_graph(sess.graph, '~/saved_models/unet/cifar-10/', 'final_graph.pb', as_text=False)
+		tf.train.export_meta_graph('~/saved_models/unet/cifar-10/final_graph.meta', graph=graph, clear_devices=True)
 
 
