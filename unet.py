@@ -4,6 +4,8 @@ import numpy as np
 
 EPOCH = 5
 BATCH_SIZE = 64
+TEST_SIZE = 128
+is_training = True
 
 def conv2d(layer, w_name, w_shape, b_name, b_shape):
  
@@ -22,7 +24,11 @@ def up_conv2d(layer, w_name, w_shape, b_name, b_shape):
   b = tf.get_variable(name=b_name, shape=b_shape, dtype=tf.float32, initializer=tf.zeros_initializer())
 
   layer_shape = layer.shape
-  output_shape=[BATCH_SIZE] + [int(layer_shape[1].value*2),int(layer_shape[2].value*2),int(layer_shape[3].value/2)]
+  if is_training:
+  	output_shape=[BATCH_SIZE] + [int(layer_shape[1].value*2),int(layer_shape[2].value*2),int(layer_shape[3].value/2)]
+  else:
+  	output_shape=[TEST_SIZE] + [int(layer_shape[1].value*2),int(layer_shape[2].value*2),int(layer_shape[3].value/2)]
+
   layer = tf.nn.conv2d_transpose(layer, w, output_shape, [1, 2, 2, 1], padding='SAME')
 
   layer = tf.add(b, layer)
@@ -30,15 +36,7 @@ def up_conv2d(layer, w_name, w_shape, b_name, b_shape):
   return layer
 
 
-if __name__ == '__main__':
-
-	(x_train, y_train), (x_test, y_test) = cifar10.load_data()
-	
-	tf.reset_default_graph()
-
-	x = tf.placeholder(dtype=tf.float32, shape=[None, 32, 32, 3], name='input')
-	y = tf.placeholder(dtype=tf.int32, shape=[None, 1], name = 'y')
-
+def unet(x):
 	with tf.variable_scope("conv_1"):
 		layer = conv2d(x, 'w0', [3, 3, 3, 64], 'b0', [64])
 		layer = tf.nn.relu(layer)
@@ -122,6 +120,19 @@ if __name__ == '__main__':
 		layer = tf.matmul(layer, w_flat)
 		final = tf.add( name='cifar10_output', x=b_flat, y=layer)
 
+	return final
+
+if __name__ == '__main__':
+
+	(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+	
+	tf.reset_default_graph()
+
+	x = tf.placeholder(dtype=tf.float32, shape=[None, 32, 32, 3], name='input')
+	y = tf.placeholder(dtype=tf.int32, shape=[None, 1], name = 'y')
+
+	final = unet(x)
+
 	# loss
 	global_step = tf.train.get_or_create_global_step()
 	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=tf.one_hot(tf.cast(y, dtype=tf.int32), 10), logits=final))
@@ -136,14 +147,7 @@ if __name__ == '__main__':
 	saver = tf.train.Saver()
 
 	with tf.Session() as sess:
-		train_writer = tf.summary.FileWriter(
-			'./tmp',
-			graph=sess.graph,
-			max_queue=10,
-			flush_secs=120,
-			graph_def=None,
-			filename_suffix=None,
-		) 
+		train_writer = tf.summary.FileWriter('./tmp', graph=sess.graph) 
 		sess.run(tf.global_variables_initializer())
 		#saver.restore(sess, tf.train.latest_checkpoint('~/saved_models/unet/cifar-10/'))
 
@@ -158,10 +162,11 @@ if __name__ == '__main__':
 				print("epoch: %d global_step: %d, step: %d loss: %f" % (epoch+1, current_global_step, step, current_loss))
 
 				if step % 10 == 0:
-					xtest_batch = x_test[:BATCH_SIZE].reshape(BATCH_SIZE, 32, 32, 3)
-					ytest_batch = y_test[:BATCH_SIZE].reshape(BATCH_SIZE, 1)
+					is_training = False
+					xtest_batch = x_test[:TEST_SIZE].reshape(TEST_SIZE, 32, 32, 3)
+					ytest_batch = y_test[:TEST_SIZE].reshape(TEST_SIZE, 1)
 					softmax_p, accuracy = sess.run([softmax, prediction], feed_dict={x: xtest_batch, y: ytest_batch})
-
+					is_training = True
 					print("accuracy: %f%%" % (accuracy*100))
 	    
 		# 	saver.save(sess, save_path='~/saved_models/unet/cifar-10/model.chkpt', global_step=current_global_step)
