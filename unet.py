@@ -39,78 +39,88 @@ if __name__ == '__main__':
 	x = tf.placeholder(dtype=tf.float32, shape=[None, 32, 32, 3], name='input')
 	y = tf.placeholder(dtype=tf.int32, shape=[None, 1], name = 'y')
 
-	layer = conv2d(x, 'w0', [3, 3, 3, 64], 'b0', [64])
-	layer = tf.nn.relu(layer)
-	layer = conv2d(layer, 'w1', [3, 3, 64, 64], 'b1', [64])
-	layer_1 = tf.nn.relu(layer, name='conv_1')
+	with tf.variable_scope("conv_1"):
+		layer = conv2d(x, 'w0', [3, 3, 3, 64], 'b0', [64])
+		layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w1', [3, 3, 64, 64], 'b1', [64])
+		layer_1 = tf.nn.relu(layer, name='conv_1')
 
-	layer = tf.nn.max_pool(value=layer_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='maxpool_1')
+		layer = tf.nn.max_pool(value=layer_1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='maxpool_1')
 
-	layer = conv2d(layer, 'w2', [3, 3, 64, 128], 'b2', [128])
-	layer = tf.nn.relu(layer)
-	layer = conv2d(layer, 'w3', [3, 3, 128, 128], 'b3', [128])
-	layer_2 = tf.nn.relu(layer, name='conv_2')
+	with tf.variable_scope("conv_2"):
+		layer = conv2d(layer, 'w2', [3, 3, 64, 128], 'b2', [128])
+		layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w3', [3, 3, 128, 128], 'b3', [128])
+		layer_2 = tf.nn.relu(layer, name='conv_2')
 
-	layer = tf.nn.max_pool(value=layer_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='maxpool_2')
+		layer = tf.nn.max_pool(value=layer_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='maxpool_2')
 
-	layer = conv2d(layer, 'w4', [3, 3, 128, 256], 'b4', [256])
-	layer = tf.nn.relu(layer)
-	layer = conv2d(layer, 'w5', [3, 3, 256, 256], 'b5', [256])
-	layer_3 = tf.nn.relu(layer, name='conv_3')
+	with tf.variable_scope("conv_3"):
+		layer = conv2d(layer, 'w4', [3, 3, 128, 256], 'b4', [256])
+		layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w5', [3, 3, 256, 256], 'b5', [256])
+		layer_3 = tf.nn.relu(layer, name='conv_3')
 
-	layer = tf.nn.max_pool(value=layer_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='maxpool_2')
+		layer = tf.nn.max_pool(value=layer_3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='maxpool_2')
 
-	layer = conv2d(layer, 'w6', [3, 3, 256, 512], 'b6', [512])
-	layer = tf.nn.relu(layer)
-	layer = conv2d(layer, 'w7', [3, 3, 512, 512], 'b7', [512])
-	layer_4 = tf.nn.relu(layer, name='conv_4')
+	with tf.variable_scope("conv_4"):
+		layer = conv2d(layer, 'w6', [3, 3, 256, 512], 'b6', [512])
+		layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w7', [3, 3, 512, 512], 'b7', [512])
+		layer_4 = tf.nn.relu(layer, name='conv_4')
 
-	layer = tf.nn.max_pool(value=layer_4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='maxpool_3')
+		layer = tf.nn.max_pool(value=layer_4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='maxpool_3')
 
-	layer = conv2d(layer, 'w8', [3, 3, 512, 1024], 'b8', [1024])
-	layer = tf.nn.relu(layer)
-	layer = conv2d(layer, 'w9', [3, 3, 1024, 1024], 'b9', [1024])
-	layer = tf.nn.relu(layer)
+	with tf.variable_scope("conv_5"):
+		layer = conv2d(layer, 'w8', [3, 3, 512, 1024], 'b8', [1024])
+		layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w9', [3, 3, 1024, 1024], 'b9', [1024])
+		layer = tf.nn.relu(layer)
 
-	layer = up_conv2d(layer, 'w10', [2, 2, 512, 1024], 'b10', [512])
-	layer = tf.concat([layer_4, layer], axis=3)
+	with tf.variable_scope("upconv_1"):
+		layer = up_conv2d(layer, 'w10', [2, 2, 512, 1024], 'b10', [512])
+		layer = tf.concat([layer_4, layer], axis=3)
 
-	layer = conv2d(layer, 'w11', [3, 3, 1024, 512], 'b11', [512])
-	layer = tf.nn.relu(layer)
-	layer = conv2d(layer, 'w12', [3, 3, 512, 512], 'b12', [512])
-	layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w11', [3, 3, 1024, 512], 'b11', [512])
+		layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w12', [3, 3, 512, 512], 'b12', [512])
+		layer = tf.nn.relu(layer)
 
-	layer = up_conv2d(layer, 'w13', [2, 2, 256, 512], 'b13', [256])
-	layer = tf.concat([layer_3, layer], axis=3)
+	with tf.variable_scope("upconv_2"):
+		layer = up_conv2d(layer, 'w13', [2, 2, 256, 512], 'b13', [256])
+		layer = tf.concat([layer_3, layer], axis=3)
 
-	layer = conv2d(layer, 'w14', [3, 3, 512, 256], 'b14', [256])
-	layer = tf.nn.relu(layer)
-	layer = conv2d(layer, 'w15', [3, 3, 256, 256], 'b15', [256])
-	layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w14', [3, 3, 512, 256], 'b14', [256])
+		layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w15', [3, 3, 256, 256], 'b15', [256])
+		layer = tf.nn.relu(layer)
 
-	layer = up_conv2d(layer, 'w16', [2, 2, 128, 256], 'b16', [128])
-	layer = tf.concat([layer_2, layer], axis=3)
+	with tf.variable_scope("upconv_3"):
+		layer = up_conv2d(layer, 'w16', [2, 2, 128, 256], 'b16', [128])
+		layer = tf.concat([layer_2, layer], axis=3)
 
-	layer = conv2d(layer, 'w17', [3, 3, 256, 128], 'b17', [128])
-	layer = tf.nn.relu(layer)
-	layer = conv2d(layer, 'w18', [3, 3, 128, 128], 'b18', [128])
-	layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w17', [3, 3, 256, 128], 'b17', [128])
+		layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w18', [3, 3, 128, 128], 'b18', [128])
+		layer = tf.nn.relu(layer)
 
-	layer = up_conv2d(layer, 'w19', [2, 2, 64, 128], 'b19', [64])
-	layer = tf.concat([layer_1, layer], axis=3)
+	with tf.variable_scope("upconv_4"):
+		layer = up_conv2d(layer, 'w19', [2, 2, 64, 128], 'b19', [64])
+		layer = tf.concat([layer_1, layer], axis=3)
 
-	layer = conv2d(layer, 'w20', [3, 3, 128, 64], 'b20', [64])
-	layer = tf.nn.relu(layer)
-	layer = conv2d(layer, 'w21', [3, 3, 64, 64], 'b21', [64])
-	layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w20', [3, 3, 128, 64], 'b20', [64])
+		layer = tf.nn.relu(layer)
+		layer = conv2d(layer, 'w21', [3, 3, 64, 64], 'b21', [64])
+		layer = tf.nn.relu(layer)
 
-	layer = conv2d(layer, 'w22', [1, 1, 64, 1], 'b22', [1])
+	with tf.variable_scope("final"):
+		layer = conv2d(layer, 'w22', [1, 1, 64, 1], 'b22', [1])
 
-	layer = tf.contrib.layers.flatten(inputs=layer)
-	w_flat = tf.get_variable(name='w_flat', shape=[layer.shape[1], 10], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer())
-	b_flat = tf.get_variable(name='b_flat', shape=[10], dtype=tf.float32, initializer=tf.zeros_initializer())
-	layer = tf.matmul(layer, w_flat)
-	final = tf.add( name='cifar10_output', x=b_flat, y=layer)
+		layer = tf.contrib.layers.flatten(inputs=layer)
+		w_flat = tf.get_variable(name='w_flat', shape=[layer.shape[1], 10], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer())
+		b_flat = tf.get_variable(name='b_flat', shape=[10], dtype=tf.float32, initializer=tf.zeros_initializer())
+		layer = tf.matmul(layer, w_flat)
+		final = tf.add( name='cifar10_output', x=b_flat, y=layer)
 
 	# loss
 	global_step = tf.train.get_or_create_global_step()
@@ -126,7 +136,14 @@ if __name__ == '__main__':
 	saver = tf.train.Saver()
 
 	with tf.Session() as sess:
-
+		train_writer = tf.summary.FileWriter(
+			'./tmp',
+			graph=sess.graph,
+			max_queue=10,
+			flush_secs=120,
+			graph_def=None,
+			filename_suffix=None,
+		) 
 		sess.run(tf.global_variables_initializer())
 		#saver.restore(sess, tf.train.latest_checkpoint('~/saved_models/unet/cifar-10/'))
 
@@ -147,8 +164,7 @@ if __name__ == '__main__':
 
 					print("accuracy: %f%%" % (accuracy*100))
 	    
-			saver.save(sess, save_path='~/saved_models/unet/cifar-10/model.chkpt', global_step=current_global_step)
-		tf.train.write_graph(sess.graph, '~/saved_models/unet/cifar-10/', 'final_graph.pb', as_text=False)
-		tf.train.export_meta_graph('~/saved_models/unet/cifar-10/final_graph.meta', graph=graph, clear_devices=True)
-
+		# 	saver.save(sess, save_path='~/saved_models/unet/cifar-10/model.chkpt', global_step=current_global_step)
+		# tf.train.write_graph(sess.graph, '~/saved_models/unet/cifar-10/', 'final_graph.pb', as_text=False)
+		# tf.train.export_meta_graph('~/saved_models/unet/cifar-10/final_graph.meta', graph=graph, clear_devices=True)
 
