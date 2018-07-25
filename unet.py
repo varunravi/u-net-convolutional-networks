@@ -4,6 +4,8 @@ import numpy as np
 
 EPOCH = 5
 BATCH_SIZE = 64
+do_training = True
+TEST_SIZE = 500
 
 def conv2d(layer, w_name, w_shape, b_name, b_shape):
  
@@ -22,9 +24,13 @@ def up_conv2d(layer, w_name, w_shape, b_name, b_shape):
   b = tf.get_variable(name=b_name, shape=b_shape, dtype=tf.float32, initializer=tf.zeros_initializer())
 
   layer_shape = layer.shape
-  output_shape=[BATCH_SIZE] + [int(layer_shape[1].value*2),int(layer_shape[2].value*2),int(layer_shape[3].value/2)]
-  layer = tf.nn.conv2d_transpose(layer, w, output_shape, [1, 2, 2, 1], padding='SAME')
+  if do_training:
+  	output_shape=[BATCH_SIZE] + [int(layer_shape[1].value*2),int(layer_shape[2].value*2),int(layer_shape[3].value/2)]
 
+  else:
+  	output_shape=[TEST_SIZE] + [int(layer_shape[1].value*2),int(layer_shape[2].value*2),int(layer_shape[3].value/2)]
+  	
+  layer = tf.nn.conv2d_transpose(layer, w, output_shape, [1, 2, 2, 1], padding='SAME')
   layer = tf.add(b, layer)
 
   return layer
@@ -119,7 +125,7 @@ if __name__ == '__main__':
 
 	# prediction
 	softmax = tf.argmax(tf.nn.softmax(logits=final), axis=1, output_type=tf.int32)
-	re = tf.reshape(softmax, [BATCH_SIZE, 1])
+	re = tf.reshape(softmax, [TEST_SIZE, 1])
 	prediction = tf.reduce_mean(tf.cast(tf.equal(re, y), dtype=tf.float32))
 
 
@@ -141,9 +147,11 @@ if __name__ == '__main__':
 				print("epoch: %d global_step: %d, step: %d loss: %f" % (epoch+1, current_global_step, step, current_loss))
 
 				if step % 10 == 0:
-					xtest_batch = x_test[:BATCH_SIZE].reshape(BATCH_SIZE, 32, 32, 3)
-					ytest_batch = y_test[:BATCH_SIZE].reshape(BATCH_SIZE, 1)
+					do_training = False
+					xtest_batch = x_test[:TEST_SIZE].reshape(TEST_SIZE, 32, 32, 3)
+					ytest_batch = y_test[:TEST_SIZE].reshape(TEST_SIZE, 1)
 					softmax_p, accuracy = sess.run([softmax, prediction], feed_dict={x: xtest_batch, y: ytest_batch})
+					do_training = True
 
 					print("accuracy: %f%%" % (accuracy*100))
 	    
