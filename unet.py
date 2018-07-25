@@ -21,8 +21,8 @@ def up_conv2d(layer, w_name, w_shape, b_name, b_shape):
   w = tf.get_variable(name=w_name, shape=w_shape, dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer())
   b = tf.get_variable(name=b_name, shape=b_shape, dtype=tf.float32, initializer=tf.zeros_initializer())
 
-  current_shape_size = layer.shape
-  output_shape=[BATCH_SIZE] + [int(current_shape_size[1].value*2),int(current_shape_size[2].value*2),int(current_shape_size[3].value/2)]
+  layer_shape = layer.shape
+  output_shape=[BATCH_SIZE] + [int(layer_shape[1].value*2),int(layer_shape[2].value*2),int(layer_shape[3].value/2)]
   layer = tf.nn.conv2d_transpose(layer, w, output_shape, [1, 2, 2, 1], padding='SAME')
 
   layer = tf.add(b, layer)
